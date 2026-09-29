@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101913">
+<title>Jaga Benteng | Tower Defense</title>
+<style>
+:root{color-scheme:dark;--ink:#edf2e8;--muted:#aab7a5;--panel:#1c2921;--panel-2:#26352b;--line:#3b4b3d;--lime:#d1f36a;--gold:#ffd166;--red:#ff7777;--serif:Georgia,'Times New Roman',serif;--sans:system-ui,-apple-system,'Segoe UI',sans-serif}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 12% 0%,#334b38 0,transparent 38%),radial-gradient(ellipse at 92% 15%,#293d32 0,transparent 32%),linear-gradient(145deg,#101913,#142219 60%,#101913);color:var(--ink);font-family:var(--sans);text-align:center}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.12;background-image:radial-gradient(#9cb38a 0.55px,transparent 0.55px);background-size:7px 7px;mask-image:linear-gradient(to bottom,#000,transparent 70%)}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.action-btn,.icon-btn{transition:background .16s,border-color .16s,color .16s,transform .16s}
+.action-btn:not(:disabled):active,.icon-btn:not(:disabled):active{transform:translateY(1px)}
+#wrap{width:min(100%,900px);margin:auto;padding:clamp(14px,3vw,30px) clamp(12px,3vw,24px) max(24px,env(safe-area-inset-bottom))}
+.masthead{display:flex;align-items:center;justify-content:space-between;text-align:left;margin:0 0 20px}
+.brand{display:flex;align-items:center;gap:12px}
+.crest{display:grid;place-items:center;width:44px;height:44px;border:1px solid #60734c;background:#253524;color:var(--lime);font-size:22px}
+h1{font:600 clamp(20px,4vw,28px)/1.05 var(--serif);margin:0;letter-spacing:0}
+.eyebrow{margin:5px 0 0;color:var(--muted);font-size:11px;letter-spacing:1.4px;text-transform:uppercase}
+.sync{font-size:12px;color:var(--muted);text-align:right}
+.sync[data-state="error"]{color:var(--gold)}
+.header-tools{display:flex;align-items:center;gap:8px}
+.header-tools button{min-height:36px;padding:6px 10px;border:1px solid var(--line);background:var(--panel);font-size:12px}
+#menu,#game{animation:arrive .24s ease-out both}
+#menu{text-align:left;max-width:680px;margin:auto}
+.menu-intro{border-top:1px solid var(--line);padding:22px 0 14px}
+.menu-intro h2{font:500 clamp(27px,6vw,42px)/1.05 var(--serif);margin:0 0 8px;letter-spacing:0}
+.menu-intro p{color:var(--muted);margin:0}
+.level-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:20px 0}
+.difficulty{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));align-items:center;gap:7px;border:0;padding:0;margin:14px 0}
+.difficulty legend{padding:0 8px 0 0;color:var(--muted);font-size:12px}
+.difficulty label{display:flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:6px;border:1px solid var(--line);background:var(--panel);font-size:12px;cursor:pointer}
+.difficulty input{margin:0;accent-color:var(--lime)}
+.difficulty label:has(input:checked){border-color:var(--lime);color:var(--lime);background:var(--panel-2)}
+.level{min-height:66px;background:var(--panel);border:1px solid var(--line);text-align:left;padding:10px 12px;transition:border-color .15s,background .15s,transform .15s}
+.level:not(:disabled):hover{border-color:var(--lime);background:var(--panel-2);transform:translateY(-2px)}
+.level:disabled{cursor:not-allowed;color:#849083;opacity:.65}
+.level strong{display:block;color:var(--lime);font:600 18px var(--serif)}
+.level span{font-size:11px;color:var(--muted)}
+.endless-cta{width:100%;min-height:46px;margin:0 0 10px}
+.best-score{border-top:1px solid var(--line);padding:14px 0;color:var(--muted);font-size:13px}
+.best-score strong{color:var(--gold);font-size:16px}
+.career-stats,.achievement-list{margin-top:8px;color:var(--muted);font-size:12px;line-height:1.6}
+.achievement-list strong{color:var(--lime);font-size:12px}
+#game{display:none}
+.game-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+#bar{display:flex;justify-content:flex-start;gap:7px;flex-wrap:wrap;text-align:left}
+.stat{min-width:84px;padding:7px 10px;background:var(--panel);border-left:2px solid var(--line);font-size:11px;color:var(--muted)}
+.stat b{display:block;color:var(--ink);font-size:16px;font-variant-numeric:tabular-nums}
+.stat.gold b{color:var(--gold)}.stat.health b{color:#ff8a80}.stat.score b{color:var(--lime)}
+.game-actions{display:flex;gap:6px}
+.icon-btn,.action-btn,.tower-btn{border:1px solid var(--line);background:var(--panel);min-height:42px;padding:8px 12px}
+.icon-btn:hover,.action-btn:hover,.tower-btn:hover{border-color:#859779;background:var(--panel-2)}
+.icon-btn:disabled,.tower-btn:disabled{opacity:.45;cursor:not-allowed}
+.board-wrap{position:relative;width:100%;overflow:hidden;border:1px solid #70835d;background:#294936;line-height:0;box-shadow:0 18px 48px #0007,0 0 0 4px #111b14}
+canvas{display:block;width:100%;height:auto;aspect-ratio:3/2;touch-action:none;user-select:none;-webkit-user-select:none}
+#pauseVeil{display:none;position:absolute;inset:0;place-items:center;background:#101913b8;color:var(--ink);font:600 28px var(--serif);line-height:1;backdrop-filter:blur(3px)}
+#pauseVeil.show{display:grid}
+.toolbar{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+#shop{display:flex;gap:7px;flex-wrap:wrap}
+.tower-btn{display:flex;align-items:center;gap:9px;min-width:112px;text-align:left}
+.tower-btn.active{border-color:var(--lime);box-shadow:inset 0 -2px var(--lime)}
+.tower-dot{width:12px;height:12px;border-radius:50%;flex:0 0 auto}
+.tower-btn small{display:block;color:var(--muted);font-size:11px}
+.utility-actions{display:flex;gap:6px}
+.action-btn{white-space:nowrap}
+.action-btn.primary{background:var(--lime);border-color:var(--lime);color:#172016;font-weight:700}
+.action-btn.primary:hover{background:#e1ff90}
+.action-btn.selected{border-color:var(--gold);color:var(--gold)}
+.action-btn.ability{border-color:#927e43;color:#ffe28a}
+.action-btn.ability.selected{background:#3d3620;box-shadow:inset 0 -2px #ffd166}
+.detail-row{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;color:var(--muted);font-size:13px}
+#info{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#msg{min-height:20px;margin:6px 0 0;color:var(--lime);font-size:13px;text-align:left}
+.hint{color:var(--muted);font-size:12px;text-align:left;margin:9px 0 0}
+dialog{width:min(460px,calc(100% - 28px));border:1px solid #60734c;background:#1c2921;color:var(--ink);padding:22px;text-align:left;box-shadow:0 24px 80px #000a}
+dialog::backdrop{background:#08100bcc}
+dialog h2{font:500 26px var(--serif);margin:0 0 14px}
+.help-list{margin:0 0 18px;padding:0;list-style:none}
+.help-list li{display:flex;justify-content:space-between;gap:18px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.help-list span:last-child{color:var(--muted);text-align:right}
+.tutorial{padding:12px;background:#25372b;border-left:2px solid var(--lime);color:var(--muted);font-size:13px;line-height:1.5}
+.audio-settings{display:grid;grid-template-columns:auto auto minmax(90px,1fr) 40px;align-items:center;gap:10px;padding:8px 0 18px}
+.audio-settings button{min-height:38px;padding:6px 10px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.audio-settings label,.audio-settings output{font-size:12px;color:var(--muted)}
+.audio-settings input{width:100%;accent-color:var(--lime)}
+.dialog-actions{display:flex;justify-content:flex-end;gap:8px}
+.wave-stat b{color:var(--gold)}
+@keyframes arrive{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:620px){#wrap{padding:12px 10px max(20px,env(safe-area-inset-bottom))}.masthead{margin-bottom:14px}.level-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.level{min-height:60px}.game-top{align-items:flex-start}.stat{min-width:calc(20% - 6px);flex:1;padding:6px 5px;font-size:10px}.stat b{font-size:13px}.game-actions{flex-direction:column}.icon-btn{min-height:36px;padding:5px 9px}.toolbar{grid-template-columns:1fr;gap:8px}#shop{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.tower-btn{min-width:0;justify-content:center;padding:7px 4px;gap:5px;font-size:12px}.tower-btn small{font-size:10px}.utility-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.action-btn{min-height:42px}.detail-row{align-items:flex-start;padding-top:7px}.header-tools{gap:5px}.header-tools button{padding:5px 7px}.sync{font-size:10px}}
+@media(max-width:360px){.crest{width:38px;height:38px}.eyebrow{font-size:9px}.stat{min-width:calc(25% - 5px);font-size:10px}.stat b{font-size:13px}.tower-btn{font-size:11px}.game-actions{gap:4px}}
+@media(max-width:360px){.audio-settings{grid-template-columns:auto minmax(80px,1fr) 40px;padding:4px 0 8px}.audio-settings button{grid-column:1/-1}dialog{padding:14px}.help-list li{padding:6px 0}.tutorial{margin:8px 0}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header class="masthead">
+    <div class="brand"><div class="crest" aria-hidden="true">♜</div><div><h1>Jaga Benteng</h1><p class="eyebrow">Pertahanan kerajaan</p></div></div>
+    <div class="header-tools"><div id="sync" class="sync" role="status" aria-live="polite">Memuat progres...</div><button id="soundBtn" type="button" aria-pressed="false">Suara: Mati</button><button id="helpBtn" type="button" aria-label="Bantuan kontrol" title="Bantuan">?</button></div>
+  </header>
+
+  <div id="menu">
+    <div class="menu-intro"><h2>Garis pertahanan dimulai di sini.</h2><p>Pilih medan. Susun tower sebelum gelombang musuh tiba.</p></div>
+    <fieldset class="difficulty" aria-label="Pilih tingkat kesulitan"><legend>Kesulitan</legend><label><input type="radio" name="difficulty" value="casual"><span>Santai</span></label><label><input type="radio" name="difficulty" value="normal" checked><span>Normal</span></label><label><input type="radio" name="difficulty" value="hard"><span>Sulit</span></label></fieldset>
+    <div id="levels" class="level-grid" aria-label="Pilih level"></div>
+    <button id="endlessBtn" class="action-btn primary endless-cta" type="button">Mulai mode tanpa akhir</button>
+    <div id="best" class="best-score"></div>
+  </div>
+
+  <div id="game">
+    <div class="game-top">
+      <div id="bar" aria-live="polite">
+        <div class="stat gold">Emas<b id="gold">0</b></div>
+        <div class="stat health">Nyawa<b id="lives">0</b></div>
+        <div class="stat">Level<b id="lv">1</b></div>
+        <div class="stat wave-stat">Gelombang<b id="wave">0/3</b></div>
+        <div class="stat score">Skor<b id="score">0</b></div>
+      </div>
+      <div class="game-actions"><button id="pauseBtn" class="icon-btn" type="button" aria-label="Jeda permainan" title="Jeda">Ⅱ</button><button id="menuBtn" class="icon-btn" type="button" title="Kembali ke menu">Menu</button></div>
+    </div>
+    <div class="board-wrap"><canvas id="c" width="600" height="400" aria-label="Medan permainan Tower Defense"></canvas><div id="pauseVeil">Dijeda</div></div>
+    <div class="toolbar"><div id="shop" aria-label="Pilih tower"></div><div class="utility-actions"><button id="startBtn" class="action-btn primary" type="button">Mulai gelombang</button><button id="flareBtn" class="action-btn ability" type="button" title="Pilih lokasi serangan suar">Suar siap</button><button id="speedBtn" class="action-btn" type="button" title="Ubah kecepatan permainan">Kecepatan 1x</button></div></div>
+    <div class="detail-row"><div id="info" aria-live="polite">Pilih tower, lalu ketuk petak untuk menempatkannya.</div></div>
+    <p id="msg" role="status" aria-live="polite"></p>
+    <p class="hint">Pilih tower untuk melihat jangkauan. Ketuk tower terpasang untuk upgrade atau jual. Tekan Q untuk membidik suar.</p>
+  </div>
+</div>
+<dialog id="helpDialog" aria-labelledby="helpTitle">
+  <h2 id="helpTitle">Kontrol permainan</h2>
+  <ul class="help-list">
+    <li><span>Pilih tower</span><span>Tombol tower di bawah medan</span></li>
+    <li><span>Bangun / pilih</span><span>Klik atau ketuk petak</span></li>
+    <li><span>Upgrade / jual</span><span>Pilih tower yang sudah dibangun</span></li>
+    <li><span>Prioritas target</span><span>Terdepan, terkuat, atau terdekat</span></li>
+    <li><span>Jeda / lanjut</span><span>Esc atau tombol jeda</span></li>
+    <li><span>Pilih tower cepat</span><span>Tombol angka 1 hingga 6</span></li>
+    <li><span>Serangan suar</span><span>Q, lalu pilih lokasi di medan</span></li>
+  </ul>
+  <p class="tutorial"><strong>Mulai:</strong> pilih tower, tempatkan di luar jalur, lalu mulai gelombang. Panah seimbang, Meriam menyerang area, Es memperlambat, Petir merantai, Penembak menjangkau jauh, dan Bara membakar musuh. Penjaga berzirah menahan damage; Pengacau menonaktifkan tower terdekat sesaat.</p>
+  <div class="audio-settings"><button id="musicBtn" type="button" aria-pressed="false">Musik: Mati</button><label for="volume">Volume</label><input id="volume" type="range" min="0" max="100" step="1" value="60" aria-label="Volume musik dan efek suara"><output id="volumeValue" for="volume">60%</output></div>
+  <div class="dialog-actions"><button id="closeHelp" class="action-btn" type="button">Tutup</button></div>
+</dialog>
+
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d',{alpha:false}),T=40;
+const mapCanvas=document.createElement('canvas');mapCanvas.width=600;mapCanvas.height=400;
+const M=mapCanvas.getContext('2d');
+const $=id=>document.getElementById(id);
+const MAX_LEVEL=10;
+const W=600,H=400;
+
+// ID pemain unik (tiap browser punya progres sendiri)
+function makeId(){
+  return (window.crypto&&crypto.randomUUID)?crypto.randomUUID()
+    :'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,10);
+}
+let PID='anon';
+try{PID=localStorage.pid||(localStorage.pid=makeId())}catch(e){PID=makeId()}
+
+// Each level has its own route and terrain palette.
+const MAPS=[
+  [[0,1],[12,1],[12,4],[2,4],[2,7],[14,7]],
+  [[0,2],[3,2],[3,6],[11,6],[11,3],[14,3]],
+  [[0,8],[13,8],[13,3],[5,3],[5,1],[14,1]],
+  [[0,0],[0,3],[10,3],[10,8],[4,8],[4,6],[14,6]],
+  [[0,5],[4,5],[4,1],[9,1],[9,6],[14,6],[14,3]],
+  [[0,9],[2,9],[2,5],[7,5],[7,8],[12,8],[12,2],[14,2]],
+  [[0,4],[5,4],[5,0],[11,0],[11,5],[7,5],[7,9],[14,9]],
+  [[0,6],[4,6],[4,2],[8,2],[8,7],[13,7],[13,0],[14,0]],
+  [[0,0],[4,0],[4,4],[10,4],[10,9],[14,9]],
+  [[0,9],[0,6],[5,6],[5,1],[12,1],[12,5],[14,5]]
+];
+const MAP_NAMES=['Padang Penjaga','Simpang Batu','Jalur Rawa','Gerbang Tua','Kebun Kabut','Lembah Basah','Padang Angin','Tepi Hutan','Benteng Utara','Puncak Bara'];
+const THEMES=[
+  {base:'#31583c',patch:'#3e6945',grass:'#71935a',dark:'#284a36',moss:'#527247',edge:'#806c48',road:'#c1a66c',mark:'#dfca91'},
+  {base:'#304d4b',patch:'#3c625e',grass:'#789d85',dark:'#233c40',moss:'#4c6b59',edge:'#68766b',road:'#b9ad86',mark:'#ded4b5'},
+  {base:'#4c5738',patch:'#626b40',grass:'#9a9957',dark:'#383f2c',moss:'#777849',edge:'#756647',road:'#c5aa70',mark:'#e0cc91'},
+  {base:'#344b48',patch:'#49625a',grass:'#82947a',dark:'#283b39',moss:'#526c58',edge:'#74644e',road:'#c0a77b',mark:'#e1d2a7'},
+  {base:'#48503a',patch:'#5b6744',grass:'#9a9a68',dark:'#343e31',moss:'#6d774f',edge:'#6d5e4c',road:'#bca77c',mark:'#e0d1a6'},
+  {base:'#3e4e56',patch:'#506a70',grass:'#7d9790',dark:'#2b3d44',moss:'#546f68',edge:'#6f685a',road:'#c2ad83',mark:'#e4d6ad'},
+  {base:'#3d563f',patch:'#4e704c',grass:'#87a66b',dark:'#304535',moss:'#638258',edge:'#70664d',road:'#c2a76c',mark:'#e5d49c'},
+  {base:'#4a4d46',patch:'#606451',grass:'#929777',dark:'#353d38',moss:'#6c765e',edge:'#716858',road:'#c0ae8b',mark:'#dfd3b8'},
+  {base:'#584b3e',patch:'#715b45',grass:'#a6875e',dark:'#3e352d',moss:'#755c42',edge:'#6f5540',road:'#c5a572',mark:'#e5d0a5'},
+  {base:'#493e3e',patch:'#674944',grass:'#a66e56',dark:'#362f31',moss:'#704b42',edge:'#70534b',road:'#c79a73',mark:'#e5c9a5'}
+];
+let P=[],pathCells=new Set(),currentTheme=THEMES[0];
+function setMap(level){
+  const mapIndex=(level-1)%MAPS.length;
+  P=MAPS[mapIndex].map(([x,y])=>[x*T+T/2,y*T+T/2]);
+  currentTheme=THEMES[mapIndex];
+  pathCells=new Set();
+  for(let k=0;k<P.length-1;k++){
+    const a=P[k],b=P[k+1],n=Math.max(Math.abs(a[0]-b[0]),Math.abs(a[1]-b[1]))/T;
+    for(let s=0;s<=n;s++){
+      const x=a[0]+(b[0]-a[0])*s/n,y=a[1]+(b[1]-a[1])*s/n;
+      pathCells.add(Math.floor(x/T)+','+Math.floor(y/T));
+    }
+  }
+  drawMap();
+}
+
+function drawMap(){
+  M.fillStyle=currentTheme.base;M.fillRect(0,0,W,H);
+  const seed=(P[0][0]+P[0][1]*7+P[P.length-1][1]*13)|0;
+  for(let cy=0;cy<H/T;cy++)for(let cx=0;cx<W/T;cx++){
+    const hash=(cx*37+cy*71+seed*19)%17;
+    if(pathCells.has(cx+','+cy))continue;
+    if(hash<5){
+      M.fillStyle=hash===0?currentTheme.patch:currentTheme.base;M.fillRect(cx*T,cy*T,T,T);
+      M.strokeStyle=currentTheme.grass;M.lineWidth=1;M.beginPath();
+      M.moveTo(cx*T+9,cy*T+30);M.lineTo(cx*T+12,cy*T+23);M.moveTo(cx*T+13,cy*T+31);M.lineTo(cx*T+16,cy*T+25);M.stroke();
+    }else if(hash===7||hash===12){
+      M.fillStyle=currentTheme.dark;M.beginPath();M.ellipse(cx*T+28,cy*T+27,7,4,-.3,0,Math.PI*2);M.fill();
+      M.fillStyle=currentTheme.moss;M.beginPath();M.ellipse(cx*T+26,cy*T+25,6,3,-.3,0,Math.PI*2);M.fill();
+    }
+  }
+  M.strokeStyle=currentTheme.dark;M.lineCap='round';M.lineJoin='round';M.beginPath();P.forEach(([x,y],i)=>i?M.lineTo(x,y):M.moveTo(x,y));M.lineWidth=40;M.stroke();
+  M.strokeStyle=currentTheme.edge;M.lineWidth=35;M.stroke();M.strokeStyle=currentTheme.road;M.lineWidth=28;M.stroke();
+  M.strokeStyle=currentTheme.mark;M.lineWidth=1;M.setLineDash([2,13]);M.stroke();M.setLineDash([]);
+  M.lineCap='butt';M.strokeStyle='rgba(18,35,23,.17)';M.lineWidth=1;
+  for(let i=0;i<=W/T;i++){M.beginPath();M.moveTo(i*T,0);M.lineTo(i*T,H);M.stroke()}
+  for(let i=0;i<=H/T;i++){M.beginPath();M.moveTo(0,i*T);M.lineTo(W,i*T);M.stroke()}
+  for(const [index,[x,y]] of [P[0],P[P.length-1]].entries()){
+    M.fillStyle=index?'#ef9b65':'#d1f36a';M.beginPath();M.arc(x,y,8,0,Math.PI*2);M.fill();
+    M.strokeStyle='#1a2b1d';M.lineWidth=2;M.stroke();
+  }
+}
+
+const TYPES=[
+  {n:'Panah',c:50,r:105,d:8,f:.48,col:'#91cf72'},
+  {n:'Meriam',c:100,r:88,d:30,f:1.55,col:'#ff9d57',splash:48},
+  {n:'Es',c:75,r:92,d:3,f:.76,col:'#73d8e8',slow:true},
+  {n:'Petir',c:135,r:102,d:8,f:1.25,col:'#f3d96b',chain:2},
+  {n:'Penembak',c:160,r:165,d:32,f:1.6,col:'#ee8064',mark:'long'},
+  {n:'Bara',c:110,r:95,d:2.5,f:.65,col:'#f07842',burn:{dps:7,duration:2.2}}
+];
+const ENEMIES={
+  scout:{hp:.65,speed:1.55,color:'#ffc857',reward:11,tone:620},
+  guard:{hp:1.55,speed:.72,color:'#bac6b5',reward:14,tone:300},
+  raider:{hp:1,speed:1,color:'#e65b4f',reward:9,tone:460},
+  warden:{hp:2.1,speed:.72,color:'#92a9a1',reward:18,tone:260,armor:.35},
+  sapper:{hp:.9,speed:1.22,color:'#df79a2',reward:15,tone:520,jammer:true},
+  captain:{hp:5.5,speed:.56,color:'#dc7654',reward:75,tone:190}
+};
+function towerEffect(t){
+  if(t.chain)return 'Rantai ke '+t.chain+' musuh';
+  if(t.splash)return 'Ledakan area';
+  if(t.slow)return 'Memperlambat musuh';
+  if(t.burn)return 'Membakar musuh';
+  return 'Serangan tunggal';
+}
+function upgradePathName(path){return path==='power'?'Daya':path==='range'?'Jangkauan':''}
+const DIFFICULTIES={
+  casual:{hp:.82,speed:.9,lives:3,gold:40,reward:.9},
+  normal:{hp:1,speed:1,lives:0,gold:0,reward:1},
+  hard:{hp:1.28,speed:1.08,lives:-2,gold:-25,reward:1.15}
+};
+let difficulty='normal';
+try{const storedDifficulty=localStorage.getItem('td-difficulty');if(DIFFICULTIES[storedDifficulty])difficulty=storedDifficulty}catch(e){}
+document.querySelectorAll('.difficulty input').forEach(input=>{
+  input.checked=input.value===difficulty;
+  input.addEventListener('change',()=>{
+    if(!input.checked)return;
+    difficulty=input.value;
+    try{localStorage.setItem('td-difficulty',difficulty)}catch(e){}
+    scheduleProgressSync();
+  });
+});
+
+let G=null,sel=0,pick=null,cursorCell=null,save={unlocked:1,best_score:0},speed=1,lastHud=0,shopButtons=[];
+const ACHIEVEMENTS={
+  firstKill:{name:'Pembuka',description:'Kalahkan musuh pertama'},
+  captain:{name:'Penakluk Komandan',description:'Kalahkan seorang komandan'},
+  firstUpgrade:{name:'Ahli Strategi',description:'Upgrade tower pertama'},
+  perfect:{name:'Benteng Utuh',description:'Menang tanpa kehilangan nyawa'},
+  campaign:{name:'Penjaga Kerajaan',description:'Tamatkan seluruh kampanye'},
+  marathon:{name:'Pelari Gelombang',description:'Capai gelombang 10 dalam mode tanpa akhir'}
+};
+let career={kills:0,wins:0,towers:0,upgrades:0,endlessBest:0,earned:[]};
+try{
+  const storedCareer=JSON.parse(localStorage.getItem('td-career')||'null');
+  if(storedCareer){
+    career={kills:Math.max(0,Number(storedCareer.kills)||0),wins:Math.max(0,Number(storedCareer.wins)||0),towers:Math.max(0,Number(storedCareer.towers)||0),upgrades:Math.max(0,Number(storedCareer.upgrades)||0),endlessBest:Math.max(0,Number(storedCareer.endlessBest)||0),earned:Array.isArray(storedCareer.earned)?storedCareer.earned.filter(id=>ACHIEVEMENTS[id]):[]};
+  }
+}catch(e){}
+let progressSyncTimer=null;
+function scheduleProgressSync(){
+  if(location.protocol==='file:')return;
+  clearTimeout(progressSyncTimer);progressSyncTimer=setTimeout(()=>postSave(),1200);
+}
+function mergeCareer(remote){
+  if(!remote||typeof remote!=='object')return;
+  career.kills=Math.max(career.kills,Number(remote.kills)||0);
+  career.wins=Math.max(career.wins,Number(remote.wins)||0);
+  career.towers=Math.max(career.towers,Number(remote.towers)||0);
+  career.upgrades=Math.max(career.upgrades,Number(remote.upgrades)||0);
+  career.endlessBest=Math.max(career.endlessBest,Number(remote.endless_best)||0);
+  const earned=Array.isArray(remote.earned)?remote.earned.filter(id=>ACHIEVEMENTS[id]):[];
+  career.earned=[...new Set([...career.earned,...earned])];
+}
+function saveCareer(sync=true){
+  try{localStorage.setItem('td-career',JSON.stringify(career))}catch(e){}
+  if(sync)scheduleProgressSync();
+}
+function awardAchievement(id){
+  if(!ACHIEVEMENTS[id]||career.earned.includes(id))return;
+  career.earned.push(id);saveCareer();
+  if(G)$('msg').textContent='Pencapaian terbuka: '+ACHIEVEMENTS[id].name+'!';
+}
+let audioCtx=null,soundOn=false,lastSound=0;
+try{soundOn=localStorage.getItem('td-sound')==='on'}catch(e){}
+let audioVolume=.6,musicOn=false,musicTimer=null,musicStep=0;
+try{const storedVolume=localStorage.getItem('td-volume');if(storedVolume!==null&&Number.isFinite(Number(storedVolume)))audioVolume=Math.max(0,Math.min(1,Number(storedVolume)));musicOn=localStorage.getItem('td-music')==='on'}catch(e){}
+
+function playTone(frequency,duration=.07){
+  if(!soundOn||!audioCtx||audioVolume===0||performance.now()-lastSound<90)return;
+  lastSound=performance.now();
+  try{
+    const oscillator=audioCtx.createOscillator(),filter=audioCtx.createBiquadFilter(),gain=audioCtx.createGain();
+    oscillator.type=frequency<220?'sawtooth':'triangle';
+    oscillator.frequency.setValueAtTime(frequency,audioCtx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(Math.max(48,frequency*.68),audioCtx.currentTime+duration);
+    filter.type='lowpass';filter.frequency.value=frequency<220?700:2200;
+    gain.gain.setValueAtTime(.001,audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(.035*audioVolume,audioCtx.currentTime+.008);
+    gain.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);
+    oscillator.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);
+    oscillator.start();oscillator.stop(audioCtx.currentTime+duration);
+  }catch(e){}
+}
+
+function updateSoundButton(){
+  $('soundBtn').textContent='Suara: '+(soundOn?'Nyala':'Mati');
+  $('soundBtn').setAttribute('aria-pressed',String(soundOn));
+}
+updateSoundButton();
+
+function ensureAudio(){
+  const AudioContextType=window.AudioContext||window.webkitAudioContext;
+  if(!audioCtx&&AudioContextType)audioCtx=new AudioContextType();
+  if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
+  return audioCtx;
+}
+function updateMusicButton(){
+  $('musicBtn').textContent='Musik: '+(musicOn?'Nyala':'Mati');
+  $('musicBtn').setAttribute('aria-pressed',String(musicOn));
+}
+function playMusicNote(){
+  if(!musicOn||!audioCtx||audioVolume===0)return;
+  const notes=[196,246.94,293.66,246.94,220,261.63,329.63,261.63];
+  const oscillator=audioCtx.createOscillator(),gain=audioCtx.createGain(),now=audioCtx.currentTime;
+  oscillator.type='sine';oscillator.frequency.value=notes[musicStep++%notes.length];
+  gain.gain.setValueAtTime(.0001,now);gain.gain.linearRampToValueAtTime(.012*audioVolume,now+.025);gain.gain.exponentialRampToValueAtTime(.0001,now+.34);
+  oscillator.connect(gain);gain.connect(audioCtx.destination);oscillator.start(now);oscillator.stop(now+.36);
+}
+function startMusic(){
+  if(musicTimer||!musicOn||!audioCtx)return;
+  playMusicNote();musicTimer=setInterval(playMusicNote,420);
+}
+function stopMusic(){
+  if(musicTimer){clearInterval(musicTimer);musicTimer=null}
+}
+function setAudioVolume(value){
+  audioVolume=Math.max(0,Math.min(1,value));
+  const percent=Math.round(audioVolume*100);
+  $('volume').value=percent;$('volumeValue').value=percent+'%';$('volumeValue').textContent=percent+'%';
+  try{localStorage.setItem('td-volume',String(audioVolume))}catch(e){}
+}
+setAudioVolume(audioVolume);
+updateMusicButton();
+$('volume').addEventListener('input',e=>setAudioVolume(Number(e.currentTarget.value)/100));
+$('musicBtn').onclick=async()=>{
+  musicOn=!musicOn;
+  try{localStorage.setItem('td-music',musicOn?'on':'off')}catch(e){}
+  updateMusicButton();
+  if(musicOn){ensureAudio();if(audioCtx){try{await audioCtx.resume()}catch(e){}startMusic()}}
+  else stopMusic();
+};
+document.addEventListener('pointerdown',()=>{if(musicOn){ensureAudio();startMusic()}},{once:true});
+
+function burst(x,y,color,count=8){
+  if(!G)return;
+  for(let i=0;i<count;i++){
+    const angle=Math.random()*Math.PI*2,speed=18+Math.random()*52,life=.22+Math.random()*.24;
+    G.fx.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life,max:life,color,size:1.5+Math.random()*2.5});
+  }
+}
+
+async function fetchWithTimeout(url,options={}){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),7000);
+  try{return await fetch(url,{...options,signal:controller.signal})}
+  finally{clearTimeout(timer)}
+}
+
+function applySyncedDifficulty(value){
+  if(!DIFFICULTIES[value])return;
+  difficulty=value;
+  document.querySelectorAll('.difficulty input').forEach(input=>{input.checked=input.value===difficulty});
+  try{localStorage.setItem('td-difficulty',difficulty)}catch(e){}
+}
+
+// ===== Simpan/muat progres lewat API Python =====
+async function loadSave(){
+  $('sync').textContent='Memuat progres...';
+  try{
+    if(location.protocol==='file:')throw new Error('Mode lokal');
+    const response=await fetchWithTimeout('/api/progress?id='+encodeURIComponent(PID),{cache:'no-store'});
+    if(!response.ok)throw new Error('Progres server tidak tersedia');
+    const r=await response.json();
+    if(Number.isInteger(r.unlocked)&&Number.isFinite(r.best_score))save={unlocked:Math.min(MAX_LEVEL,Math.max(1,r.unlocked)),best_score:Math.max(0,r.best_score)};
+    mergeCareer(r.career);saveCareer(false);
+    applySyncedDifficulty(r.difficulty);
+    try{localStorage.setItem('td-save',JSON.stringify(save))}catch(ignore){}
+    $('sync').textContent='Progres tersinkron';$('sync').dataset.state='ok';
+  }catch(e){
+    try{const local=JSON.parse(localStorage.getItem('td-save')||'null');if(local)save={unlocked:Math.min(MAX_LEVEL,Math.max(1,Number(local.unlocked)||1)),best_score:Math.max(0,Number(local.best_score)||0)}}catch(ignore){}
+    $('sync').textContent='Mode lokal';$('sync').dataset.state='error';
+  }
+  menu();
+}
+async function postSave(){
+  try{localStorage.setItem('td-save',JSON.stringify(save))}catch(e){}
+  if(location.protocol==='file:'){$('sync').textContent='Tersimpan di perangkat';$('sync').dataset.state='error';return}
+  try{
+    const payload={...save,difficulty,career:{kills:career.kills,wins:career.wins,towers:career.towers,upgrades:career.upgrades,endless_best:career.endlessBest,earned:career.earned}};
+    const response=await fetchWithTimeout('/api/progress?id='+encodeURIComponent(PID),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!response.ok)throw new Error('Progres belum tersinkron');
+    const synced=await response.json();
+    if(Number.isInteger(synced.unlocked)&&Number.isFinite(synced.best_score)){
+      save={unlocked:Math.min(MAX_LEVEL,Math.max(save.unlocked,synced.unlocked)),best_score:Math.max(save.best_score,synced.best_score)};
+      try{localStorage.setItem('td-save',JSON.stringify(save))}catch(e){}
+    }
+    mergeCareer(synced.career);saveCareer(false);applySyncedDifficulty(synced.difficulty);
+    $('sync').textContent='Progres tersimpan';$('sync').dataset.state='ok';
+  }catch(e){$('sync').textContent='Tersimpan di perangkat';$('sync').dataset.state='error'}
+}
+
+// ===== Menu =====
+function menu(){
+  G=null;
+  $('game').style.display='none';$('menu').style.display='block';
+  $('levels').innerHTML='';
+  for(let i=1;i<=MAX_LEVEL;i++){
+    const b=document.createElement('button');
+    b.className='level';
+    b.innerHTML=`<strong>${i<=save.unlocked?'Level '+i:'Terkunci'}</strong><span>${i<=save.unlocked?MAP_NAMES[i-1]:'Selesaikan level sebelumnya'}</span>`;
+    b.disabled=i>save.unlocked;
+    b.setAttribute('aria-label',i<=save.unlocked?'Mulai level '+i:'Level '+i+' terkunci');
+    b.onclick=()=>start(i);
+    $('levels').appendChild(b);
+  }
+  const unlocked=career.earned.map(id=>ACHIEVEMENTS[id].name).join(' · ')||'Belum ada pencapaian';
+  $('best').innerHTML=`Rekor terbaik <strong>${Math.floor(save.best_score).toLocaleString('id-ID')}</strong><div class="career-stats">Karier: ${career.wins} menang · ${career.kills} musuh · ${career.towers} tower · ${career.upgrades} upgrade · Rekor tanpa akhir ${career.endlessBest}</div><div class="achievement-list"><strong>Pencapaian ${career.earned.length}/${Object.keys(ACHIEVEMENTS).length}</strong> · ${unlocked}</div>`;
+}
+
+// ===== Mulai level =====
+function start(lv,endless=false){
+  setMap(lv);
+  const mode=DIFFICULTIES[difficulty];
+  const q=[],count=6+lv*2,interval=count*.9+2;
+  for(let w=0;w<(endless?1:3);w++)for(let i=0;i<count;i++){
+    const kind=w===2&&i===count-1?'captain':w===0?(i%5===0?'scout':'raider'):w===1?(i%4===0?'sapper':i%3===0?'warden':'guard'):(i%5===0?'sapper':i%3===0?'warden':'raider');
+    const enemy=ENEMIES[kind];
+    q.push({at:w*interval+i*.9,wave:w+1,kind,hp:20*(1+.24*(lv-1))*(1+.2*w)*enemy.hp*mode.hp,sp:(43+lv*2.5+w*4)*enemy.speed*mode.speed,reward:Math.round(enemy.reward*mode.reward)});
+  }
+  const livesAtStart=Math.max(6,Math.max(9,12-Math.floor((lv-1)/2))+mode.lives);
+  G={lv,difficulty,endless,gold:Math.max(90,130+lv*20+mode.gold),lives:livesAtStart,livesAtStart,score:0,towers:[],en:[],fx:[],q,time:0,wave:0,run:false,paused:false,over:false,flareCd:0,targeting:false};
+  pick=null;sel=0;cursorCell=null;
+  $('menu').style.display='none';$('game').style.display='block';
+  $('msg').textContent=endless?'Mode tanpa akhir. Bertahan selama mungkin.':'Atur pertahanan, lalu mulai gelombang.';
+  $('startBtn').disabled=false;
+  $('startBtn').textContent='Mulai gelombang';$('pauseBtn').disabled=true;
+  $('pauseVeil').classList.remove('show');
+  speed=1;$('speedBtn').textContent='Kecepatan 1x';
+  shop();ui();
+}
+$('endlessBtn').onclick=()=>start(save.unlocked,true);
+
+function shop(){
+  if(!G)return;
+  if(!shopButtons.length){
+    shopButtons=TYPES.map((t,i)=>{
+      const b=document.createElement('button');
+      b.className='tower-btn';
+      b.innerHTML=`<span class="tower-dot" style="background:${t.col}"></span><span>${t.n}<small>${t.c} emas</small></span>`;
+      b.title=`${t.n}: damage ${t.d}, jangkauan ${t.r}. ${towerEffect(t)}.`;
+      b.onclick=()=>{sel=i;pick=null;shop();ui()};
+      return b;
+    });
+    $('shop').replaceChildren(...shopButtons);
+  }
+  shopButtons.forEach((b,i)=>{
+    b.classList.toggle('active',i===sel);
+    b.disabled=G.gold<TYPES[i].c;
+  });
+}
+
+function ui(){
+  if(!G)return;
+  $('gold').textContent=Math.floor(G.gold);$('lives').textContent=G.lives;
+  $('lv').textContent=G.lv;$('wave').textContent=G.wave+'/'+(G.endless?'∞':'3');$('score').textContent=G.score;
+  const info=$('info');
+  const preserveInfo=pick&&info.contains(document.activeElement);
+  if(pick&&!preserveInfo){
+    pick.targetMode=pick.targetMode||'leading';
+    const cost=upCost(pick);
+    const targetOptions=`<label class="target-setting">Target <select id="targetPriority" aria-label="Prioritas target"><option value="leading">Terdepan</option><option value="strongest">Terkuat</option><option value="nearest">Terdekat</option></select></label>`;
+    let upgradeControls='';
+    if(pick.lv===1)upgradeControls=`<button id="up" class="action-btn" type="button">Upgrade dasar · ${cost} emas</button>`;
+    else if(!pick.path)upgradeControls=`<button id="pathPower" class="action-btn" type="button">Daya · ${cost} emas</button><button id="pathRange" class="action-btn" type="button">Jangkauan · ${cost} emas</button>`;
+    else if(pick.lv<5)upgradeControls=`<button id="up" class="action-btn" type="button">${upgradePathName(pick.path)} Lv.${pick.lv+1} · ${cost} emas</button>`;
+    else upgradeControls='<span class="max-level">Upgrade maksimum</span>';
+    info.innerHTML=`<span>${pick.t.n} Lv.${pick.lv}${pick.path?' · '+upgradePathName(pick.path):''} · Damage ${pick.d.toFixed(1)} · Jangkauan ${pick.r} · ${towerEffect(pick.t)}${pick.jammed>0?' · Terganggu':''}</span>${targetOptions}${upgradeControls}<button id="sell" class="action-btn" type="button">Jual · ${Math.floor(pick.t.c*.55*pick.lv)} emas</button>`;
+    const applyUpgrade=(path=null)=>{
+      if(G.gold<cost)return;
+      G.gold-=cost;
+      career.upgrades++;
+      if(career.upgrades===1)awardAchievement('firstUpgrade');
+      saveCareer();
+      if(path){pick.path=path;pick.lv++;if(path==='power'){pick.d*=1.55;pick.f=(pick.f||pick.t.f)*.9}else{pick.d*=1.15;pick.r+=25;pick.f=(pick.f||pick.t.f)*.88}}
+      else if(!pick.path){pick.lv++;pick.d*=1.25;pick.r+=8;pick.f=pick.t.f}
+      else if(pick.path==='power'){pick.lv++;pick.d*=1.55;pick.f*=.9}
+      else{pick.lv++;pick.d*=1.15;pick.r+=18;pick.f*=.88}
+      playTone(700);ui();shop();
+    };
+    if($('up')){$('up').disabled=G.gold<cost;$('up').onclick=()=>applyUpgrade()}
+    if($('pathPower')){$('pathPower').disabled=G.gold<cost;$('pathPower').onclick=()=>applyUpgrade('power');$('pathRange').disabled=G.gold<cost;$('pathRange').onclick=()=>applyUpgrade('range')}
+    $('targetPriority').value=pick.targetMode;
+    $('targetPriority').onchange=e=>{pick.targetMode=e.currentTarget.value};
+    $('sell').onclick=()=>{G.gold+=Math.floor(pick.t.c*.55*pick.lv);G.towers=G.towers.filter(t=>t!==pick);pick=null;playTone(260);ui();shop()};
+  }else if(!pick)info.textContent='';
+  const flare=$('flareBtn');
+  flare.textContent=G.targeting?'Pilih lokasi':G.flareCd>0?'Suar '+Math.ceil(G.flareCd)+'s':'Suar siap';
+  flare.classList.toggle('selected',G.targeting);
+  flare.disabled=G.over||(!G.targeting&&G.flareCd>0);
+  shop();
+}
+const upCost=t=>Math.round(t.t.c*.8*t.lv);
+
+function queueEndlessWave(){
+  const wave=G.wave+1,mode=DIFFICULTIES[G.difficulty],count=6+G.lv*2+Math.floor(wave/3);
+  for(let i=0;i<count;i++){
+    const kind=i===count-1&&wave%5===0?'captain':wave>1&&i%4===0?'sapper':wave>1&&i%3===0?'warden':i%5===0?'scout':'raider';
+    const enemy=ENEMIES[kind];
+    G.q.push({at:G.time+1.2+i*.58,wave,kind,hp:20*(1+.24*(G.lv-1))*(1+.16*wave)*enemy.hp*mode.hp,sp:(43+G.lv*2.5+wave*2.8)*enemy.speed*mode.speed,reward:Math.round(enemy.reward*mode.reward)});
+  }
+}
+
+// ===== Input =====
+function canvasPoint(e){
+  const r=C.getBoundingClientRect();
+  return {x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height};
+}
+C.addEventListener('pointermove',e=>{
+  if(!G)return;
+  const point=canvasPoint(e);cursorCell={cx:Math.floor(point.x/T),cy:Math.floor(point.y/T)};
+});
+C.addEventListener('pointerleave',()=>{cursorCell=null});
+C.addEventListener('pointerdown',e=>{
+  if(!G||G.over)return;
+  const {x,y}=canvasPoint(e);
+  const cx=Math.floor(x/T),cy=Math.floor(y/T);
+  if(cx<0||cy<0||cx>=W/T||cy>=H/T)return;
+  if(G.targeting){
+    G.targeting=false;G.flareCd=20;
+    let hits=0;
+    for(const enemy of G.en)if(Math.hypot(enemy.x-x,enemy.y-y)<=68){enemy.hp-=(48+G.lv*5)*(1-(enemy.armor||0));enemy.slow=Math.max(enemy.slow,1.8);hits++}
+    burst(x,y,'#ffd166',30);burst(x,y,'#ff8b55',16);playTone(150,.22);
+    $('msg').textContent=hits?'Suar menghantam '+hits+' musuh.':'Suar meledak, tetapi tak mengenai musuh.';ui();return;
+  }
+  const ex=G.towers.find(t=>t.cx===cx&&t.cy===cy);
+  if(ex){pick=ex;ui();return}
+  pick=null;
+  const ty=TYPES[sel];
+  if(pathCells.has(cx+','+cy)||G.gold<ty.c){ui();return}
+  if(G.towers.some(t=>t.cx===cx&&t.cy===cy)){ui();return}
+  G.gold-=ty.c;
+  G.towers.push({t:ty,cx,cy,x:cx*T+T/2,y:cy*T+T/2,d:ty.d,r:ty.r,f:ty.f,lv:1,cd:0,beam:null,targetMode:'leading'});
+  career.towers++;saveCareer();
+  burst(cx*T+T/2,cy*T+T/2,ty.col,10);playTone(420);
+  ui();
+});
+$('startBtn').onclick=()=>{if(G){G.run=true;G.paused=false;$('startBtn').disabled=true;$('pauseBtn').disabled=false;$('msg').textContent='Musuh mendekat!';playTone(520)}};
+$('pauseBtn').onclick=()=>{if(!G||!G.run||G.over)return;G.paused=!G.paused;$('pauseVeil').classList.toggle('show',G.paused);$('pauseBtn').textContent=G.paused?'▶':'Ⅱ';$('pauseBtn').title=G.paused?'Lanjutkan':'Jeda';$('pauseBtn').setAttribute('aria-label',G.paused?'Lanjutkan permainan':'Jeda permainan')};
+$('menuBtn').onclick=menu;
+$('speedBtn').onclick=()=>{speed=speed===1?2:1;$('speedBtn').textContent='Kecepatan '+speed+'x';$('speedBtn').classList.toggle('selected',speed===2)};
+$('flareBtn').onclick=()=>{if(!G||G.over||G.flareCd>0)return;G.targeting=!G.targeting;pick=null;$('msg').textContent=G.targeting?'Pilih titik serangan di medan.':'Bidikan suar dibatalkan.';ui()};
+ $('soundBtn').onclick=async()=>{
+  soundOn=!soundOn;
+  try{localStorage.setItem('td-sound',soundOn?'on':'off')}catch(e){}
+  if(soundOn){const AudioContextType=window.AudioContext||window.webkitAudioContext;if(AudioContextType){audioCtx=audioCtx||new AudioContextType();try{await audioCtx.resume()}catch(e){}}}
+  updateSoundButton();playTone(520);
+};
+$('helpBtn').onclick=()=>{
+  const resume=Boolean(G&&G.run&&!G.over&&!G.paused);
+  $('helpDialog').dataset.resume=String(resume);
+  if(resume)$('pauseBtn').click();
+  $('helpDialog').showModal();
+};
+$('closeHelp').onclick=()=>$('helpDialog').close();
+ $('helpDialog').addEventListener('close',()=>{
+  const resume=$('helpDialog').dataset.resume==='true';
+  delete $('helpDialog').dataset.resume;
+  if(resume&&G&&!G.over&&G.paused)$('pauseBtn').click();
+});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&G&&G.run&&!G.over&&!G.paused)$('pauseBtn').click()});
+document.addEventListener('keydown',e=>{
+  if($('helpDialog').open)return;
+  const control=e.target instanceof Element&&e.target.closest('button,input,select,textarea,summary');
+  if((e.key==='Escape'||(e.code==='Space'&&!control))&&G&&G.run&&!G.over){e.preventDefault();$('pauseBtn').click()}
+  if(!control&&['1','2','3','4','5','6'].includes(e.key)&&G&&!G.over){sel=Number(e.key)-1;pick=null;shop();ui()}
+  if(!control&&e.key.toLowerCase()==='q'&&G&&!G.over)$('flareBtn').click();
+});
+
+// ===== Update =====
+function update(dt){
+  if(!G)return;
+  for(const fx of G.fx){fx.life-=dt;fx.x+=fx.vx*dt;fx.y+=fx.vy*dt;fx.vx*=.96;fx.vy*=.96}
+  G.fx=G.fx.filter(fx=>fx.life>0);
+  if(!G.run||G.over||G.paused)return;
+  G.time+=dt;
+  G.flareCd=Math.max(0,G.flareCd-dt);
+  while(G.q.length&&G.time>=G.q[0].at){
+    const s=G.q.shift();
+    const enemy=ENEMIES[s.kind];
+    G.wave=s.wave;
+    G.en.push({x:P[0][0],y:P[0][1],i:1,hp:s.hp,max:s.hp,sp:s.sp,slow:0,dist:0,kind:s.kind,reward:s.reward,armor:enemy.armor||0,jammer:!!enemy.jammer});
+    if(G.endless&&G.wave>=10)awardAchievement('marathon');
+    if(G.wave>1&&G.time-s.at<dt*1.1)playTone(360+G.wave*70);
+  }
+  for(const e of G.en){
+    const tg=P[e.i],dx=tg[0]-e.x,dy=tg[1]-e.y,d=Math.hypot(dx,dy);
+    const v=e.sp*(e.slow>0?.5:1)*dt;
+    e.slow=Math.max(0,e.slow-dt);
+    if(e.burn>0){e.burn=Math.max(0,e.burn-dt);e.hp-=e.burnDps*dt;if(e.hp<=0&&!e.fx){e.fx=true;burst(e.x,e.y,ENEMIES[e.kind].color,9);playTone(ENEMIES[e.kind].tone)}}
+    if(d<=v){
+      e.x=tg[0];e.y=tg[1];e.i++;
+      if(e.i>=P.length){e.hp=-1;e.leak=true;G.lives--;burst(e.x,e.y,'#ff7777',7);playTone(170)}
+    }else{e.x+=dx/d*v;e.y+=dy/d*v;}
+    e.dist+=v;
+  }
+  for(const t of G.towers){
+    t.jammed=Math.max(0,(t.jammed||0)-dt);
+    if(G.en.some(e=>e.hp>0&&e.jammer&&Math.hypot(e.x-t.x,e.y-t.y)<54))t.jammed=Math.max(t.jammed,.3);
+    t.cd-=dt;if(t.beam)t.beam.life-=dt;
+    if(t.cd>0||t.jammed>0)continue;
+    let best=null,bestDistance=Infinity;
+    for(const e of G.en){
+      const distance=Math.hypot(e.x-t.x,e.y-t.y);
+      if(e.hp<=0||distance>t.r)continue;
+      const preferred=!best||t.targetMode==='strongest'?(!best||e.hp>best.hp):t.targetMode==='nearest'?distance<bestDistance:e.dist>best.dist;
+      if(preferred){best=e;bestDistance=distance}
+    }
+    if(!best)continue;
+    t.cd=t.f||t.t.f;
+    t.beam={x:best.x,y:best.y,life:.1};
+    const hit=(e,damage=t.d)=>{e.hp-=damage*(1-(e.armor||0));if(t.t.slow)e.slow=1.5;if(t.t.burn){e.burn=Math.max(e.burn||0,t.t.burn.duration);e.burnDps=t.t.burn.dps*(1-(e.armor||0))}if(e.hp<=0&&!e.fx){e.fx=true;burst(e.x,e.y,ENEMIES[e.kind].color,9);playTone(ENEMIES[e.kind].tone)}};
+    if(t.t.splash)G.en.forEach(e=>{if(e.hp>0&&Math.hypot(e.x-best.x,e.y-best.y)<=t.t.splash)hit(e)});
+    else if(t.t.chain){
+      const chained=G.en.filter(e=>e.hp>0&&e!==best&&Math.hypot(e.x-best.x,e.y-best.y)<58).sort((a,b)=>Math.hypot(a.x-best.x,a.y-best.y)-Math.hypot(b.x-best.x,b.y-best.y)).slice(0,t.t.chain);
+      hit(best);chained.forEach((enemy,index)=>{hit(enemy,t.d*Math.pow(.68,index+1));t.beam={x:enemy.x,y:enemy.y,life:.13}});
+    }else hit(best);
+  }
+  let defeated=0;
+  for(const e of G.en)if(e.hp<=0&&!e.leak&&!e.paid){
+    e.paid=true;G.gold+=e.reward+G.lv;G.score+=10;career.kills++;defeated++;
+    if(career.kills===1)awardAchievement('firstKill');
+    if(e.kind==='captain')awardAchievement('captain');
+  }
+  if(defeated)saveCareer();
+  G.en=G.en.filter(e=>e.hp>0);
+  if(performance.now()-lastHud>180){ui();lastHud=performance.now()}
+
+  if(G.lives<=0){end(false)}
+  else if(!G.q.length&&!G.en.length){
+    if(G.endless){queueEndlessWave();$('msg').textContent='Bertahan! Gelombang '+(G.wave+1)+' mendekat.'}
+    else end(true);
+  }
+}
+
+function end(win){
+  G.over=true;
+  $('pauseBtn').disabled=true;
+  if(win){
+    G.score+=G.lives*20;
+    career.wins++;
+    if(G.lives===G.livesAtStart)awardAchievement('perfect');
+    if(G.lv===MAX_LEVEL)awardAchievement('campaign');
+    saveCareer();
+    save.best_score=Math.max(save.best_score,G.score);
+    if(G.lv>=save.unlocked&&G.lv<MAX_LEVEL)save.unlocked=G.lv+1;
+    postSave();
+    $('msg').textContent=G.lv===MAX_LEVEL?'🏆 Kamu tamatkan semua level!':'✅ Level selesai! Skor: '+G.score;
+  }else if(G.endless){
+    career.endlessBest=Math.max(career.endlessBest,G.wave);
+    if(G.wave>=10)awardAchievement('marathon');
+    saveCareer();
+    $('msg').textContent='Mode tanpa akhir berakhir di gelombang '+G.wave+'. Rekor: '+career.endlessBest+'.';
+  }else $('msg').textContent='Pertahanan runtuh. Kembali ke menu untuk mencoba lagi.';
+  $('startBtn').disabled=false;$('startBtn').textContent='Main lagi';
+  $('startBtn').onclick=()=>start(G.lv);
+  ui();
+}
+
+// ===== Gambar =====
+function draw(){
+  X.drawImage(mapCanvas,0,0);
+  if(!G)return;
+  if(cursorCell&&!G.over){
+    const {cx,cy}=cursorCell,occupied=G.towers.some(t=>t.cx===cx&&t.cy===cy),valid=!pathCells.has(cx+','+cy)&&!occupied&&G.gold>=TYPES[sel].c;
+    if(G.targeting){X.fillStyle='rgba(255,191,89,.16)';X.beginPath();X.arc(cx*T+20,cy*T+20,68,0,Math.PI*2);X.fill();X.strokeStyle='#ffd166';X.setLineDash([5,5]);X.beginPath();X.arc(cx*T+20,cy*T+20,68,0,Math.PI*2);X.stroke();X.setLineDash([])}
+    else if(!occupied){X.globalAlpha=.45;X.fillStyle=valid?TYPES[sel].col:'#ff7777';X.beginPath();X.arc(cx*T+20,cy*T+20,12,0,Math.PI*2);X.fill();X.globalAlpha=1}
+  }
+  for(const t of G.towers){
+    const pulse=1+Math.sin(performance.now()*.004+t.x)*.035;
+    if(t===pick){X.fillStyle='rgba(240,255,210,.09)';X.beginPath();X.arc(t.x,t.y,t.r,0,Math.PI*2);X.fill();X.strokeStyle='#f4ffd8';X.setLineDash([4,5]);X.beginPath();X.arc(t.x,t.y,t.r,0,Math.PI*2);X.stroke();X.setLineDash([])}
+    if(t.jammed>0){X.strokeStyle='#ed88a9';X.lineWidth=2;X.setLineDash([3,3]);X.beginPath();X.arc(t.x,t.y,21,0,Math.PI*2);X.stroke();X.setLineDash([]);X.fillStyle='#ffe0ea';X.font='bold 13px sans-serif';X.textAlign='center';X.fillText('×',t.x,t.y-17)}
+    X.fillStyle='#18291e';X.beginPath();X.ellipse(t.x,t.y+3,17,14,0,0,Math.PI*2);X.fill();
+    X.fillStyle='#536a45';X.beginPath();X.arc(t.x,t.y,13*pulse,0,Math.PI*2);X.fill();
+    X.fillStyle=t.t.col;X.shadowColor=t.t.col;X.shadowBlur=t.cd<=0?9:3;X.beginPath();X.arc(t.x,t.y-2,8,0,Math.PI*2);X.fill();X.shadowBlur=0;
+    X.strokeStyle='#19261c';X.lineWidth=3;X.lineCap='round';X.beginPath();
+    if(t.t===TYPES[0]){X.moveTo(t.x-3,t.y+5);X.lineTo(t.x+7,t.y-7);X.moveTo(t.x+2,t.y-1);X.lineTo(t.x+8,t.y-8)}
+    else if(t.t===TYPES[1]){X.moveTo(t.x-1,t.y+2);X.lineTo(t.x+10,t.y-9);X.moveTo(t.x-5,t.y+6);X.lineTo(t.x+3,t.y+1)}
+    else if(t.t===TYPES[2]){X.moveTo(t.x,t.y-7);X.lineTo(t.x+5,t.y);X.lineTo(t.x,t.y+6);X.lineTo(t.x-5,t.y);X.closePath()}
+    else if(t.t===TYPES[3]){X.moveTo(t.x-4,t.y+4);X.lineTo(t.x+2,t.y-2);X.lineTo(t.x-1,t.y-2);X.lineTo(t.x+5,t.y-9)}
+    else if(t.t===TYPES[4]){X.moveTo(t.x-6,t.y+5);X.lineTo(t.x+8,t.y-9);X.moveTo(t.x+2,t.y-3);X.lineTo(t.x+9,t.y-10)}
+    else{X.moveTo(t.x-5,t.y+4);X.lineTo(t.x,t.y-7);X.lineTo(t.x+2,t.y-1);X.lineTo(t.x+7,t.y-5);X.lineTo(t.x+3,t.y+6);X.closePath()}
+    X.stroke();X.lineWidth=1;X.lineCap='butt';
+    X.fillStyle='#fff4c5';X.font='bold 9px sans-serif';X.textAlign='center';X.fillText(t.lv,t.x+11,t.y-10);
+    if(t.beam&&t.beam.life>0){
+      X.globalAlpha=Math.max(.2,t.beam.life/.13);X.strokeStyle=t.t.col;X.shadowColor=t.t.col;X.shadowBlur=8;X.lineWidth=3;X.beginPath();
+      X.moveTo(t.x,t.y);X.lineTo(t.beam.x,t.beam.y);X.stroke();X.lineWidth=1;X.shadowBlur=0;X.globalAlpha=1;
+    }
+  }
+  for(const e of G.en){
+    const bob=Math.sin(performance.now()*.008+e.x)*1.2;
+    X.fillStyle=e.slow>0?'#81d4fa':ENEMIES[e.kind].color;X.shadowColor=ENEMIES[e.kind].color;X.shadowBlur=e.kind==='captain'?12:4;
+    X.beginPath();
+    if(e.kind==='scout'){X.moveTo(e.x,e.y-11+bob);X.lineTo(e.x+9,e.y+bob);X.lineTo(e.x,e.y+11+bob);X.lineTo(e.x-9,e.y+bob);X.closePath()}
+    else if(e.kind==='sapper'){X.moveTo(e.x,e.y-12+bob);X.lineTo(e.x+11,e.y+8+bob);X.lineTo(e.x-11,e.y+8+bob);X.closePath()}
+    else X.arc(e.x,e.y+bob,e.kind==='captain'?14:e.kind==='guard'?11:9,0,Math.PI*2);
+    X.fill();X.shadowBlur=0;
+    if(e.kind==='guard'||e.kind==='warden'||e.kind==='captain'){X.strokeStyle=e.kind==='captain'?'#ffe09a':e.kind==='warden'?'#d7efea':'#e4e9dd';X.lineWidth=e.kind==='captain'?3:2;X.beginPath();X.arc(e.x,e.y+bob,e.kind==='captain'?16:12,0,Math.PI*2);X.stroke();X.lineWidth=1}
+    X.fillStyle='#19251c';X.fillRect(e.x-13,e.y-19,26,5);
+    X.fillStyle=e.hp/e.max<.3?'#ff7777':'#d1f36a';X.fillRect(e.x-12,e.y-18,24*Math.max(0,e.hp/e.max),3);
+    if(e.kind==='captain'){X.fillStyle='#ffe09a';X.beginPath();X.moveTo(e.x-7,e.y-12+bob);X.lineTo(e.x-5,e.y-19+bob);X.lineTo(e.x,e.y-14+bob);X.lineTo(e.x+5,e.y-20+bob);X.lineTo(e.x+7,e.y-12+bob);X.fill()}
+    if(e.burn>0){X.strokeStyle='#ff9c54';X.lineWidth=2;X.beginPath();X.arc(e.x,e.y+bob,14+Math.sin(performance.now()*.02+e.x)*2,0,Math.PI*2);X.stroke();X.lineWidth=1}
+  }
+  for(const fx of G.fx){X.globalAlpha=Math.max(0,fx.life/fx.max);X.fillStyle=fx.color;X.shadowColor=fx.color;X.shadowBlur=7;X.beginPath();X.arc(fx.x,fx.y,fx.size,0,Math.PI*2);X.fill()}
+  X.shadowBlur=0;
+  X.globalAlpha=1;
+}
+
+function resizeCanvas(){
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const width=Math.round(W*dpr),height=Math.round(H*dpr);
+  if(C.width!==width||C.height!==height){C.width=width;C.height=height;X.setTransform(dpr,0,0,dpr,0,0);draw()}
+}
+new ResizeObserver(resizeCanvas).observe(C);
+window.addEventListener('orientationchange',resizeCanvas,{passive:true});
+resizeCanvas();
+let last=performance.now();
+function loop(now){
+  const elapsed=Math.min(Math.max((now-last)/1000,0),.05);last=now;
+  update(elapsed*speed);draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+loadSave();
+</script>
+</body>
+</html>
